@@ -1,0 +1,170 @@
+name: deepref
+
+x-llama-healthcheck: &llama-healthcheck
+  test: ["CMD", "curl", "-fsS", "http://localhost:8080/health"]
+  interval: 15s
+  timeout: 5s
+  retries: 10
+  # The first start downloads the model from Hugging Face; allow time for that.
+  start_period: 20m
+
+services:
+  db:
+    image: pgvector/pgvector:pg17
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-deepref}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+      POSTGRES_DB: ${POSTGRES_DB:-deepref}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # S3-compatible object storage for uploaded PDFs and other assets. MinIO no longer publishes
+  # official images, so this uses Chainguard's build of upstream MinIO, pinned by digest.
+  minio:
+    image: ${MINIO_IMAGE:-cgr.dev/chainguard/minio:latest@sha256:cff197fef764642223ef9f4444c903d51aee9b544a7be8bc007fef6b7b00d136}
+    restart: unless-stopped
+    command: ["server", "/data", "--console-address", ":9001"]
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:?set MINIO_ROOT_USER in .env}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:?set MINIO_ROOT_PASSWORD in .env}
+      # Lets `mc ready local` in the healthcheck reach this server.
+      MC_HOST_local: http://localhost:9000
+    volumes:
+      - miniodata:/data
+    ports:
+      # Web console on localhost only. The S3 API stays internal: the browser gets files
+      # through the backend, which checks ownership on every download.
+      - "127.0.0.1:9001:9001"
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  # One-shot setup: private bucket + an app user restricted to that bucket, so the backend
+  # never holds the MinIO root credentials. Safe to re-run.
+  minio-init:
+    image: ${MINIO_IMAGE:-cgr.dev/chainguard/minio:latest@sha256:cff197fef764642223ef9f4444c903d51aee9b544a7be8bc007fef6b7b00d136}
+    entrypoint: ["/bin/sh", "/minio-init.sh"]
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+      MINIO_BUCKET: ${MINIO_BUCKET:-deepref}
+      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:?set MINIO_ACCESS_KEY in .env}
+      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:?set MINIO_SECRET_KEY in .env}
+    volumes:
+      - ./infra/minio-init.sh:/minio-init.sh:ro
+      - ./infra/import-local-uploads.sh:/import-local-uploads.sh:ro
+    depends_on:
+      minio:
+        condition: service_healthy
+    restart: "no"
+
+  # SmolLM2-1.7B-Instruct (GGUF Q4_K_M, ~1.06 GB) served by llama.cpp with an OpenAI-compatible API.
+  llm:
+    image: ghcr.io/ggml-org/llama.cpp:server
+    restart: unless-stopped
+    environment:
+      LLAMA_CACHE: /models
+    command:
+      - --hf-repo
+      - ${LLM_HF_REPO:-HuggingFaceTB/SmolLM2-1.7B-Instruct-GGUF}
+      - --hf-file
+      - ${LLM_HF_FILE:-smollm2-1.7b-instruct-q4_k_m.gguf}
+      - --alias
+      - smollm2-1.7b-instruct
+      - --host
+      - 0.0.0.0
+      - --port
+      - "8080"
+      # Total context is split across parallel slots: 8192 / 2 = 4096 tokens per request.
+      - --ctx-size
+      - ${LLM_CTX_SIZE:-8192}
+      - --parallel
+      - ${LLM_PARALLEL:-2}
+      - --threads
+      - ${LLM_THREADS:-4}
+      # llama.cpp caches past prompts in RAM, 8 GiB by default: more than a typical Docker VM.
+      # RAG prompts rarely repeat (each has different passages), so a small cache loses little.
+      - --cache-ram
+      - ${LLM_CACHE_RAM_MB:-512}
+      - --jinja
+    volumes:
+      - models:/models
+    # Model (~1 GB) + KV cache (~1.6 GB at 8192 ctx) + prompt cache + buffers. If it ever grows
+    # past this, only this container restarts instead of the kernel killing Postgres or MinIO.
+    mem_limit: ${LLM_MEM_LIMIT:-5g}
+    healthcheck: *llama-healthcheck
+
+  # bge-small-en-v1.5 (384-dim) embeddings, also served by llama.cpp.
+  embeddings:
+    image: ghcr.io/ggml-org/llama.cpp:server
+    restart: unless-stopped
+    environment:
+      LLAMA_CACHE: /models
+    command:
+      - --hf-repo
+      - CompendiumLabs/bge-small-en-v1.5-gguf
+      - --hf-file
+      - bge-small-en-v1.5-q8_0.gguf
+      - --alias
+      - bge-small-en-v1.5
+      - --embedding
+      - --pooling
+      - cls
+      - --host
+      - 0.0.0.0
+      - --port
+      - "8080"
+      - --ctx-size
+      - "2048"
+      - --parallel
+      - "4"
+    volumes:
+      - models:/models
+    healthcheck: *llama-healthcheck
+
+  backend:
+    build: ./backend
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      POSTGRES_HOST: db
+      LLM_BASE_URL: http://llm:8080/v1
+      EMBEDDING_BASE_URL: http://embeddings:8080/v1
+      MINIO_ENDPOINT: minio:9000
+    ports:
+      # Exposed on localhost only, for the interactive API docs at /api/v1/docs.
+      - "127.0.0.1:8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+      minio-init:
+        condition: service_completed_successfully
+      embeddings:
+        condition: service_healthy
+      llm:
+        condition: service_started
+
+  frontend:
+    build: ./frontend
+    restart: unless-stopped
+    environment:
+      BACKEND_URL: http://backend:8000
+      COOKIE_SECURE: ${COOKIE_SECURE:-false}
+    ports:
+      - "3000:3000"
+    depends_on:
+      backend:
+        condition: service_healthy
+
+volumes:
+  pgdata:
+  models:
+  miniodata:
