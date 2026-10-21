@@ -1,16 +1,7 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import {
-  BarChart3,
-  FileText,
-  MessageSquarePlus,
-  MoreHorizontal,
-  Pencil,
-  Search,
-  Trash2,
-  Users,
-} from "lucide-react";
+import { MoreHorizontal, Pencil, Search, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
@@ -42,22 +33,13 @@ import {
   SidebarMenuSkeleton,
   SidebarRail,
 } from "@/components/ui/sidebar";
+import { ADMIN_NAV, NAV } from "@/config/navigation";
 import { useCurrentUser } from "@/hooks/use-current-user";
 import { api, json } from "@/lib/api";
 import { queries } from "@/lib/queries";
-import type { Conversation } from "@/lib/types";
+import type { Conversation, NavItem } from "@/types";
 
-const NAV = [
-  { href: "/chat", label: "New chat", icon: MessageSquarePlus, exact: true },
-  { href: "/documents", label: "Documents", icon: FileText },
-];
-
-const ADMIN_NAV = [
-  { href: "/admin", label: "Analytics", icon: BarChart3, exact: true },
-  { href: "/admin/users", label: "Users", icon: Users },
-];
-
-function NavItems({ items }: { items: typeof NAV }) {
+function NavItems({ items }: { items: NavItem[] }) {
   const pathname = usePathname();
   return (
     <SidebarMenu>

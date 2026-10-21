@@ -1,5 +1,3 @@
-// Mirrors the FastAPI response schemas in backend/app/schemas.
-
 export type Role = "user" | "admin";
 
 export type User = {
@@ -87,3 +85,7 @@ export type ServiceHealth = {
   llm: boolean;
   embeddings: boolean;
 };
+
+export type TokenResponse = { access_token: string; expires_in: number };
+
+export type FastApiError = { detail?: string | { msg: string }[] };

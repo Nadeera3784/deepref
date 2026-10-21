@@ -4,8 +4,7 @@ import { forwardedFor } from "@/lib/client-ip";
 import { backendUrl } from "@/lib/server-config";
 import { readTokenClaims, setSessionCookie } from "@/lib/session";
 import { loginSchema } from "@/lib/validation/auth";
-
-type TokenResponse = { access_token: string; expires_in: number };
+import type { TokenResponse } from "@/types";
 
 export async function POST(request: Request) {
   const parsed = loginSchema.safeParse(await request.json().catch(() => null));

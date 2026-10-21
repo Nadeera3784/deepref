@@ -27,7 +27,6 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     app.state.storage = ObjectStorage.from_settings()
     await app.state.storage.ensure_bucket()
 
-    # One pooled HTTP client shared by the LLM and embedding clients.
     async with httpx.AsyncClient(timeout=httpx.Timeout(60.0, connect=5.0)) as http:
         app.state.http = http
         yield

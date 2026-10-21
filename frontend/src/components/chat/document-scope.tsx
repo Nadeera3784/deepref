@@ -14,11 +14,9 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { queries } from "@/lib/queries";
+import type { DocumentScopeProps } from "@/types";
 
-type Props = { value: string[]; onChange: (ids: string[]) => void; disabled?: boolean };
-
-/** Restricts which documents a chat searches. An empty selection means all documents. */
-export function DocumentScope({ value, onChange, disabled }: Props) {
+export function DocumentScope({ value, onChange, disabled }: DocumentScopeProps) {
   const { data: documents = [] } = useQuery(queries.documents());
   const ready = documents.filter((d) => d.status === "ready");
   const selected = new Set(value);

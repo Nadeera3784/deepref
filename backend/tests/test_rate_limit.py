@@ -53,7 +53,6 @@ async def test_clients_are_limited_separately() -> None:
 
 
 async def test_global_limit_applies_across_clients() -> None:
-    # Rotating (or spoofed) IPs can't get past the global ceiling of 3 per minute.
     results = [
         s for ip in ("10.0.0.1", "10.0.0.2", "10.0.0.3", "10.0.0.4") for s in await statuses(ip, 1)
     ]
@@ -63,7 +62,6 @@ async def test_global_limit_applies_across_clients() -> None:
 async def test_rejected_requests_do_not_use_up_quota() -> None:
     await statuses("10.0.0.1", 2)
     assert await statuses("10.0.0.1", 5) == [429] * 5
-    # Only 2 of the 3 global slots were used: the five rejections didn't count.
     assert await statuses("10.0.0.2", 1) == [200]
 
 
@@ -74,4 +72,4 @@ async def test_can_be_disabled(monkeypatch: pytest.MonkeyPatch) -> None:
 
 def test_register_route_is_rate_limited() -> None:
     route = next(r for r in auth.router.routes if getattr(r, "path", None) == "/auth/register")
-    assert any(d.call is auth.register_rate_limit for d in route.dependant.dependencies)  # type: ignore[attr-defined]
+    assert any(d.call is auth.register_rate_limit for d in route.dependant.dependencies)

@@ -12,6 +12,5 @@ export default function ChatPage({ params }: PageProps<"/chat/[id]">) {
 
 async function Conversation({ params }: Pick<PageProps<"/chat/[id]">, "params">) {
   const { id } = await params;
-  // Keyed so switching chats resets streaming state.
   return <ChatView key={id} conversationId={id} />;
 }

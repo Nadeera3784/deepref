@@ -1,6 +1,5 @@
-export type ServerSentEvent = { event: string; data: string };
+import type { ServerSentEvent } from "@/types";
 
-/** Parses a text/event-stream body into events as they arrive. */
 export async function* readEventStream(
   body: ReadableStream<Uint8Array>,
 ): AsyncGenerator<ServerSentEvent> {

@@ -86,7 +86,6 @@ def upgrade() -> None:
         sa.PrimaryKeyConstraint("id", name=op.f("pk_document_chunks")),
     )
     op.create_index(op.f("ix_document_chunks_document_id"), "document_chunks", ["document_id"])
-    # Approximate nearest-neighbour index for cosine-distance search.
     op.execute(
         "CREATE INDEX ix_document_chunks_embedding_hnsw ON document_chunks "
         "USING hnsw (embedding vector_cosine_ops)"

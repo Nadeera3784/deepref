@@ -1,7 +1,7 @@
 import { Badge } from "@/components/ui/badge";
 import { Spinner } from "@/components/ui/spinner";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import type { DocumentItem } from "@/lib/types";
+import type { DocumentItem } from "@/types";
 
 export function StatusBadge({ document }: { document: DocumentItem }) {
   switch (document.status) {

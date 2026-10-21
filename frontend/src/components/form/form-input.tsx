@@ -1,25 +1,16 @@
 "use client";
 
-import type { ComponentProps } from "react";
-import { type Control, Controller, type FieldPath, type FieldValues } from "react-hook-form";
+import { Controller, type FieldValues } from "react-hook-form";
 
 import { Field, FieldDescription, FieldError, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import type { FormInputProps } from "@/types";
 
-// TOutput differs from T when the schema transforms values (e.g. "" -> null).
-type Props<T extends FieldValues, TContext, TOutput extends FieldValues> = {
-  control: Control<T, TContext, TOutput>;
-  name: FieldPath<T>;
-  label: string;
-  description?: string;
-} & Omit<ComponentProps<typeof Input>, "name" | "value" | "onChange" | "onBlur" | "defaultValue">;
-
-/** A labelled shadcn Input bound to React Hook Form, with accessible error wiring. */
 export function FormInput<
   T extends FieldValues,
   TContext = unknown,
   TOutput extends FieldValues = T,
->({ control, name, label, description, id = name, ...inputProps }: Props<T, TContext, TOutput>) {
+>({ control, name, label, description, id = name, ...inputProps }: FormInputProps<T, TContext, TOutput>) {
   return (
     <Controller
       control={control}

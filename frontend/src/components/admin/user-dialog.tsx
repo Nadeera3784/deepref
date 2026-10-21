@@ -24,16 +24,9 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { api, json } from "@/lib/api";
-import type { AdminUser, Role } from "@/lib/types";
+import type { AdminUser, Role, UserDialogProps } from "@/types";
 
-type Props = {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  /** Edit this user; omit to create a new one. */
-  user?: AdminUser | null;
-};
-
-export function UserDialog({ open, onOpenChange, user }: Props) {
+export function UserDialog({ open, onOpenChange, user }: UserDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">

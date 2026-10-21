@@ -5,16 +5,9 @@ import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import type { ComposerProps } from "@/types";
 
-type Props = {
-  onSend: (question: string) => void;
-  onStop?: () => void;
-  busy: boolean;
-  disabled?: boolean;
-  placeholder?: string;
-};
-
-export function Composer({ onSend, onStop, busy, disabled, placeholder }: Props) {
+export function Composer({ onSend, onStop, busy, disabled, placeholder }: ComposerProps) {
   const [value, setValue] = useState("");
   const canSend = value.trim().length > 0 && !busy && !disabled;
 

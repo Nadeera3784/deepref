@@ -23,7 +23,6 @@ async def check_database() -> bool:
 
 
 async def _check_http(http: httpx.AsyncClient, base_url: str) -> bool:
-    # llama.cpp exposes /health at the server root, next to the /v1 API.
     url = base_url.removesuffix("/").removesuffix("/v1") + "/health"
     try:
         response = await http.get(url, timeout=3)

@@ -1,16 +1,9 @@
 import type { NextResponse } from "next/server";
 
-import type { Role } from "@/lib/types";
+import type { TokenClaims } from "@/types";
 
-/** Shared by Proxy and Route Handlers, so it must not import "server-only". */
 export const SESSION_COOKIE = "deepref_session";
 
-export type TokenClaims = { sub: string; role: Role; exp: number };
-
-/**
- * Reads the JWT payload WITHOUT verifying its signature. Only for optimistic routing
- * decisions in Proxy; the backend verifies the token on every API call.
- */
 export function readTokenClaims(token: string | undefined): TokenClaims | null {
   if (!token) return null;
   try {

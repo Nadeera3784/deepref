@@ -6,7 +6,7 @@ import { useState } from "react";
 import { Markdown } from "@/components/chat/markdown";
 import { Sources } from "@/components/chat/sources";
 import { Button } from "@/components/ui/button";
-import type { Source } from "@/lib/types";
+import type { AssistantMessageProps } from "@/types";
 
 export function UserMessage({ content }: { content: string }) {
   return (
@@ -18,9 +18,7 @@ export function UserMessage({ content }: { content: string }) {
   );
 }
 
-type AssistantProps = { content: string; sources: Source[] | null; streaming?: boolean };
-
-export function AssistantMessage({ content, sources, streaming = false }: AssistantProps) {
+export function AssistantMessage({ content, sources, streaming = false }: AssistantMessageProps) {
   const [copied, setCopied] = useState(false);
 
   async function copy() {

@@ -12,11 +12,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Field, FieldDescription, FieldError, FieldGroup } from "@/components/ui/field";
 import { Spinner } from "@/components/ui/spinner";
 import { errorMessage } from "@/lib/api";
-import {
-  type RegisterFormInput,
-  type RegisterFormValues,
-  registerFormSchema,
-} from "@/lib/validation/auth";
+import { registerFormSchema } from "@/lib/validation/auth";
+import type { RegisterFormInput, RegisterFormValues } from "@/types";
 
 export function RegisterForm() {
   const router = useRouter();
@@ -44,7 +41,6 @@ export function RegisterForm() {
       return;
     }
 
-    // Sign straight in with the new credentials.
     const login = await fetch("/api/auth/login", {
       method: "POST",
       headers: { "Content-Type": "application/json" },

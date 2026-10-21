@@ -11,8 +11,6 @@ from app.core.config import settings
 from app.models import Document, DocumentChunk, DocumentStatus, Message
 from app.schemas.chat import Source
 
-# Small models follow instructions far better when the context lives in the system message
-# and the user turn holds only the question (measured against SmolLM2-1.7B-Instruct).
 SYSTEM_PROMPT = (
     "You are DeepRef, an assistant that answers questions about the user's documents.\n"
     "Answer using only the facts in the context passages below. Never use outside or general "
@@ -22,8 +20,6 @@ SYSTEM_PROMPT = (
     "documents."
 )
 
-# Sent without calling the LLM when retrieval finds nothing relevant. A small model given no
-# context tends to answer from memory (or echo its instructions), so it never gets the chance.
 NO_ANSWER_MESSAGE = (
     "I couldn't find anything about that in your documents. Try rephrasing your question, "
     "or upload a PDF that covers it."
@@ -33,14 +29,11 @@ NO_ANSWER_MESSAGE_SCOPED = (
     "question, or search all documents instead."
 )
 
-# Sent when the model, even after a retry, only produces citation markers like "[1]".
 NO_ANSWER_FROM_PASSAGES = (
     "I found passages that look related but couldn't put an answer together from them. "
     "Check the sources below, or try asking in a different way."
 )
 
-# A small model given a short "What is X?" question and one passage often replies with just
-# "[1]". Adding this to the question on a retry fixed that in testing (4/8 failures -> 0/8).
 RETRY_INSTRUCTION = "Answer in full sentences using the passages, then add the citation."
 
 _CITATION = re.compile(r"\[[\d.,\s]*\]")
@@ -62,7 +55,6 @@ def with_retry_instruction(messages: list[dict[str, str]]) -> list[dict[str, str
     return [*rest, {**question, "content": f"{question['content']}\n\n{RETRY_INSTRUCTION}"}]
 
 
-# Keeps a long earlier answer from crowding retrieved context out of the model's window.
 MAX_HISTORY_CHARS = 1500
 
 
@@ -74,7 +66,6 @@ async def retrieve(
     document_ids: Sequence[uuid.UUID] = (),
     top_k: int = settings.RETRIEVAL_TOP_K,
 ) -> list[Source]:
-    # Keep scanning the HNSW index until enough rows survive the owner/document filters.
     await session.execute(text("SET LOCAL hnsw.iterative_scan = relaxed_order"))
 
     distance = DocumentChunk.embedding.cosine_distance(query_embedding).label("distance")

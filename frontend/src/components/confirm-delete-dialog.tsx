@@ -13,17 +13,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Spinner } from "@/components/ui/spinner";
-
-type Props = {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  title: React.ReactNode;
-  description: React.ReactNode;
-  /** Performs the delete. The dialog stays open (and locked) until it settles. */
-  onConfirm: () => Promise<unknown>;
-  confirmLabel?: string;
-  pendingLabel?: string;
-};
+import type { ConfirmDeleteDialogProps } from "@/types";
 
 export function ConfirmDeleteDialog({
   open,
@@ -33,18 +23,16 @@ export function ConfirmDeleteDialog({
   onConfirm,
   confirmLabel = "Delete",
   pendingLabel = "Deleting…",
-}: Props) {
+}: ConfirmDeleteDialogProps) {
   const [pending, setPending] = useState(false);
 
   async function confirm(event: React.MouseEvent) {
-    // AlertDialogAction closes the dialog on click by default; close only once the delete succeeds.
     event.preventDefault();
     setPending(true);
     try {
       await onConfirm();
       onOpenChange(false);
     } catch {
-      // The caller reports the error (e.g. a toast); keep the dialog open so the user can retry.
     } finally {
       setPending(false);
     }

@@ -73,7 +73,7 @@ async def upload_document(
     try:
         await session.commit()
     except Exception:
-        await storage.delete(key)  # don't leave an object no row points at
+        await storage.delete(key)
         raise
 
     background.add_task(ingest_document, document.id, embedder, storage)

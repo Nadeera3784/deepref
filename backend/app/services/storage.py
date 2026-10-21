@@ -21,7 +21,7 @@ from botocore.response import StreamingBody
 
 from app.core.config import settings
 
-if TYPE_CHECKING:  # the stubs are a dev dependency, absent from the production image
+if TYPE_CHECKING:
     from types_boto3_s3 import S3Client
     from types_boto3_s3.type_defs import ObjectIdentifierTypeDef
 
@@ -29,7 +29,7 @@ logger = logging.getLogger(__name__)
 
 _STREAM_CHUNK = 64 * 1024
 _MISSING_CODES = {"NoSuchKey", "NoSuchBucket", "404", "NotFound"}
-_DELETE_BATCH = 1000  # S3's per-request limit for DeleteObjects
+_DELETE_BATCH = 1000
 
 
 class ObjectNotFoundError(Exception):
@@ -76,10 +76,7 @@ class ObjectStorage:
             region_name=settings.S3_REGION,
             config=Config(
                 signature_version="s3v4",
-                # RustFS (like most self-hosted S3 servers) only routes path-style URLs by default.
                 s3={"addressing_style": "path"},
-                # boto3 >= 1.36 adds CRC checksums to every request by default; only send them
-                # when the API requires it, which every S3-compatible server understands.
                 request_checksum_calculation="when_required",
                 response_checksum_validation="when_required",
                 retries={"max_attempts": 3, "mode": "standard"},
@@ -163,7 +160,6 @@ class ObjectStorage:
         try:
             await asyncio.to_thread(self._client.delete_object, Bucket=self._bucket, Key=key)
         except (ClientError, BotoCoreError):
-            # The database row is already gone; an orphaned object is harmless but worth noting.
             logger.exception("Failed to delete object %s", key)
 
     async def delete_prefix(self, prefix: str) -> None:

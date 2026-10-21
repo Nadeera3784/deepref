@@ -1,7 +1,7 @@
 from functools import lru_cache
 from typing import Annotated, Literal
 
-from pydantic import AnyHttpUrl, BeforeValidator, EmailStr, SecretStr, computed_field
+from pydantic import AnyHttpUrl, BeforeValidator, EmailStr, SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -38,7 +38,6 @@ class Settings(BaseSettings):
     POSTGRES_PASSWORD: SecretStr
     POSTGRES_DB: str = "deepref"
 
-    @computed_field  # type: ignore[prop-decorator]
     @property
     def database_url(self) -> str:
         password = self.POSTGRES_PASSWORD.get_secret_value()
@@ -62,20 +61,15 @@ class Settings(BaseSettings):
     CHUNK_SIZE: int = 1000
     CHUNK_OVERLAP: int = 150
     RETRIEVAL_TOP_K: int = 4
-    # Minimum cosine similarity for a passage to count as relevant. bge-small compresses scores
-    # into a narrow band: measured on real documents, on-topic questions scored >= 0.69 and
-    # unrelated ones <= 0.59, so 0.62 sits between them. Below it, no LLM call is made.
     RETRIEVAL_MIN_SCORE: float = 0.62
     HISTORY_MESSAGES: int = 6
 
-    # Object storage: RustFS in Docker Compose, but any S3-compatible service works.
     S3_ENDPOINT_URL: str = "http://rustfs:9000"
     S3_ACCESS_KEY: str
     S3_SECRET_KEY: SecretStr
     S3_BUCKET: str = "deepref"
     S3_REGION: str = "us-east-1"
 
-    # Uploads
     MAX_UPLOAD_MB: int = 25
 
     @property

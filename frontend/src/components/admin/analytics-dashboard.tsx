@@ -31,7 +31,7 @@ import {
 } from "@/components/ui/table";
 import { formatBytes, formatNumber } from "@/lib/format";
 import { queries } from "@/lib/queries";
-import type { Analytics } from "@/lib/types";
+import type { Analytics } from "@/types";
 
 const chartConfig = {
   questions: { label: "Questions", color: "var(--chart-1)" },
@@ -86,6 +86,13 @@ function ServiceStatus() {
 
 function sum(daily: Analytics["daily"], key: "questions" | "new_users" | "documents") {
   return daily.reduce((total, d) => total + d[key], 0);
+}
+
+function dateRange(daily: Analytics["daily"]): string | null {
+  const first = daily.at(0);
+  const last = daily.at(-1);
+  if (!first || !last) return null;
+  return `${shortDate.format(parseDay(first.day))} – ${shortDate.format(parseDay(last.day))}`;
 }
 
 export function AnalyticsDashboard() {
@@ -150,8 +157,7 @@ export function AnalyticsDashboard() {
             <CardHeader>
               <CardTitle>Questions per day</CardTitle>
               <CardDescription>
-                {shortDate.format(parseDay(data.daily[0].day))} –{" "}
-                {shortDate.format(parseDay(data.daily.at(-1)!.day))}
+                {dateRange(data.daily) ?? "No activity in this period"}
               </CardDescription>
             </CardHeader>
             <CardContent>

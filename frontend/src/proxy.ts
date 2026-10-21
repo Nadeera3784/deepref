@@ -2,10 +2,6 @@ import { type NextRequest, NextResponse } from "next/server";
 
 import { readTokenClaims, SESSION_COOKIE } from "@/lib/session";
 
-/**
- * Optimistic route protection based on the session cookie. Real authorization happens in the
- * FastAPI backend, which verifies the token signature on every request.
- */
 const PUBLIC_PATHS = ["/login", "/register"];
 
 export function proxy(request: NextRequest) {
@@ -28,6 +24,5 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = {
-  // Skip API routes, Next.js internals and static files.
   matcher: ["/((?!api|_next/static|_next/image|favicon.ico|.*\\.[\\w]+$).*)"],
 };

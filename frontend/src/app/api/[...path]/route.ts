@@ -34,7 +34,6 @@ async function proxy(request: NextRequest, { params }: RouteContext<"/api/[...pa
         method: request.method,
         headers,
         body: hasBody ? request.body : undefined,
-        // Required by Node's fetch to stream a request body.
         ...(hasBody ? { duplex: "half" } : {}),
         signal: request.signal,
         redirect: "manual",

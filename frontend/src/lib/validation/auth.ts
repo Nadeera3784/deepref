@@ -16,7 +16,6 @@ export const registerRequestSchema = z.object({
     .string()
     .trim()
     .max(255, "Name must be 255 characters or fewer")
-    // The form sends null for a blank name; API clients may leave the field out entirely.
     .nullish()
     .transform((name) => name || null),
   email,
@@ -29,7 +28,3 @@ export const registerFormSchema = registerRequestSchema
     message: "Passwords do not match",
     path: ["confirm"],
   });
-
-export type LoginValues = z.infer<typeof loginSchema>;
-export type RegisterFormInput = z.input<typeof registerFormSchema>;
-export type RegisterFormValues = z.output<typeof registerFormSchema>;

@@ -31,7 +31,7 @@ def test_retry_instruction_is_added_to_a_copy_of_the_question() -> None:
     retried = with_retry_instruction(PROMPT)
     assert retried[-1]["content"] == f"What is X?\n\n{RETRY_INSTRUCTION}"
     assert retried[0] == PROMPT[0]
-    assert PROMPT[-1]["content"] == "What is X?"  # original untouched
+    assert PROMPT[-1]["content"] == "What is X?"
 
 
 class ScriptedLLM:
@@ -50,7 +50,7 @@ class ScriptedLLM:
 
 async def run(llm: ScriptedLLM) -> tuple[str, Usage]:
     usage = Usage()
-    text = "".join([d async for d in conversations._generate(llm, PROMPT, usage)])  # type: ignore[arg-type]
+    text = "".join([d async for d in conversations._generate(llm, PROMPT, usage)])
     return text, usage
 
 
@@ -65,9 +65,9 @@ async def test_normal_answer_streams_without_a_retry() -> None:
 async def test_citation_only_answer_is_hidden_and_retried_with_a_nudge() -> None:
     llm = ScriptedLLM(["[", "1", "]"], ["Tomatoes", " grow", " upright", " [1]."])
     text, usage = await run(llm)
-    assert text == "Tomatoes grow upright [1]."  # the bare "[1]" never reached the user
+    assert text == "Tomatoes grow upright [1]."
     assert llm.prompts[1][-1]["content"].endswith(RETRY_INSTRUCTION)
-    assert (usage.prompt_tokens, usage.completion_tokens) == (200, 20)  # both attempts billed
+    assert (usage.prompt_tokens, usage.completion_tokens) == (200, 20)
 
 
 async def test_gives_an_honest_message_when_the_retry_also_fails() -> None:

@@ -1,7 +1,7 @@
 import { FileText } from "lucide-react";
 
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import type { Source } from "@/lib/types";
+import type { Source } from "@/types";
 
 export function Sources({ sources }: { sources: Source[] }) {
   if (!sources.length) return null;

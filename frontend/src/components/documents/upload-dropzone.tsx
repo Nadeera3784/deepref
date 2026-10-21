@@ -7,12 +7,10 @@ import { toast } from "sonner";
 
 import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
+import type { UploadProgress } from "@/types";
 
 const MAX_MB = 25;
 
-type Upload = { id: string; name: string; progress: number };
-
-/** XHR instead of fetch so we can report upload progress. */
 function uploadFile(file: File, onProgress: (percent: number) => void): Promise<void> {
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
@@ -37,7 +35,7 @@ export function UploadDropzone() {
   const queryClient = useQueryClient();
   const inputRef = useRef<HTMLInputElement>(null);
   const [dragging, setDragging] = useState(false);
-  const [uploads, setUploads] = useState<Upload[]>([]);
+  const [uploads, setUploads] = useState<UploadProgress[]>([]);
 
   async function handleFiles(files: FileList | null) {
     for (const file of Array.from(files ?? [])) {

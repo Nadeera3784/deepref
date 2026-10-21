@@ -15,7 +15,6 @@ def extract_pages(data: bytes) -> list[str]:
     try:
         reader = PdfReader(io.BytesIO(data))
         if reader.is_encrypted:
-            # Many "encrypted" PDFs only restrict permissions and open with an empty password.
             reader.decrypt("")
         return [page.extract_text() or "" for page in reader.pages]
     except (PdfReadError, ValueError, KeyError) as exc:

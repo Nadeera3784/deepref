@@ -7,7 +7,6 @@ def test_document_keys_live_under_the_owner_prefix() -> None:
     user_id, document_id = uuid.uuid4(), uuid.uuid4()
     key = document_key(user_id, document_id)
     assert key == f"users/{user_id}/documents/{document_id}.pdf"
-    # Deleting a user removes everything under this prefix, so documents must be inside it.
     assert key.startswith(user_prefix(user_id))
 
 

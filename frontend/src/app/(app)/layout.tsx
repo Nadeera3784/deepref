@@ -7,7 +7,6 @@ import { Sidebar, SidebarHeader, SidebarInset, SidebarProvider } from "@/compone
 export default function AppLayout({ children }: LayoutProps<"/">) {
   return (
     <SidebarProvider>
-      {/* The sidebar reads the current path, which is request-time data on dynamic routes. */}
       <Suspense fallback={<SidebarFallback />}>
         <AppSidebar />
       </Suspense>

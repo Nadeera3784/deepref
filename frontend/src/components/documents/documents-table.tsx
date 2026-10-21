@@ -33,7 +33,7 @@ import {
 import { api } from "@/lib/api";
 import { formatBytes, formatDate } from "@/lib/format";
 import { queries } from "@/lib/queries";
-import type { DocumentItem } from "@/lib/types";
+import type { DocumentItem } from "@/types";
 
 export function DocumentsTable() {
   const queryClient = useQueryClient();

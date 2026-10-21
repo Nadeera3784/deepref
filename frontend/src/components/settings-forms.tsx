@@ -17,7 +17,7 @@ import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useCurrentUser } from "@/hooks/use-current-user";
 import { api, json } from "@/lib/api";
-import type { User } from "@/lib/types";
+import type { User } from "@/types";
 
 export function ProfileForm() {
   const { data: user } = useCurrentUser();

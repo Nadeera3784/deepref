@@ -3,7 +3,6 @@
 import re
 from dataclasses import dataclass
 
-# Tried in order: paragraph, line, sentence, word boundaries.
 _SEPARATORS = ("\n\n", "\n", ". ", " ")
 
 
@@ -33,7 +32,6 @@ def _split(text: str, chunk_size: int, separators: tuple[str, ...]) -> list[str]
     for position, part in enumerate(parts):
         if not part:
             continue
-        # Keep meaningful separators (". ") attached, except after the final part.
         keep = separator.strip() and position < len(parts) - 1
         piece = part + separator if keep else part
         if len(piece) > chunk_size:
@@ -53,7 +51,6 @@ def split_text(text: str, chunk_size: int, overlap: int) -> list[str]:
         joiner = "" if not current or current.endswith((" ", "\n")) else " "
         if current and len(current) + len(joiner) + len(piece) > chunk_size:
             chunks.append(current.strip())
-            # Carry the tail of the previous chunk forward, starting on a word boundary.
             tail = current[-overlap:] if overlap else ""
             if " " in tail:
                 tail = tail[tail.index(" ") + 1 :]

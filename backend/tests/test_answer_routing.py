@@ -44,8 +44,8 @@ def embedder(monkeypatch: pytest.MonkeyPatch) -> RecordingEmbedder:
 
 async def find(embedder: RecordingEmbedder, question: str, history: list[Message]) -> list[Source]:
     return await conversations._find_sources(
-        None,  # type: ignore[arg-type]
-        embedder,  # type: ignore[arg-type]
+        None,
+        embedder,
         User(id=uuid.uuid4()),
         Conversation(document_ids=[]),
         question,
@@ -55,7 +55,7 @@ async def find(embedder: RecordingEmbedder, question: str, history: list[Message
 
 async def test_off_topic_question_finds_nothing(embedder: RecordingEmbedder) -> None:
     assert await find(embedder, "Who is the CEO of Apple?", []) == []
-    assert embedder.queries == ["Who is the CEO of Apple?"]  # no history, so no retry
+    assert embedder.queries == ["Who is the CEO of Apple?"]
 
 
 async def test_vague_follow_up_retries_with_previous_question(embedder: RecordingEmbedder) -> None:
@@ -92,7 +92,7 @@ async def test_fixed_reply_streams_without_calling_the_llm(monkeypatch: pytest.M
             uuid.uuid4(),
             conversations.NO_ANSWER_MESSAGE,
             [],
-            ExplodingLLM(),  # type: ignore[arg-type]
+            ExplodingLLM(),
         )
     ]
     assert events[0] == "event: sources\ndata: []\n\n"

@@ -11,9 +11,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Field, FieldDescription, FieldError, FieldGroup } from "@/components/ui/field";
 import { Spinner } from "@/components/ui/spinner";
 import { errorMessage } from "@/lib/api";
-import { type LoginValues, loginSchema } from "@/lib/validation/auth";
+import { loginSchema } from "@/lib/validation/auth";
+import type { LoginValues } from "@/types";
 
-/** Only allow same-site relative redirects after login. */
 function safeNextPath(): string {
   const next = new URLSearchParams(window.location.search).get("next");
   return next?.startsWith("/") && !next.startsWith("//") ? next : "/chat";
@@ -36,7 +36,6 @@ export function LoginForm() {
     });
     if (!response.ok) {
       form.setError("root.server", { message: await errorMessage(response) });
-      // Don't leave a rejected password in the field.
       form.resetField("password");
       form.setFocus("password");
       return;

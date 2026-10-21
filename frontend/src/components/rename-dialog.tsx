@@ -11,22 +11,15 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import type { RenameDialogProps } from "@/types";
 
-type Props = {
-  open: boolean;
-  initialValue: string;
-  onOpenChange: (open: boolean) => void;
-  onSubmit: (value: string) => void;
-};
-
-export function RenameDialog({ open, initialValue, onOpenChange, onSubmit }: Props) {
+export function RenameDialog({ open, initialValue, onOpenChange, onSubmit }: RenameDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Rename chat</DialogTitle>
         </DialogHeader>
-        {/* Keyed so the field resets to the current title each time the dialog opens. */}
         {open && (
           <RenameForm
             key={initialValue}

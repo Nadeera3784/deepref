@@ -3,8 +3,9 @@
 import asyncio
 import logging
 import uuid
+from typing import Any, cast
 
-from sqlalchemy import update
+from sqlalchemy import CursorResult, update
 
 from app.core.config import settings
 from app.db.session import SessionLocal
@@ -16,7 +17,6 @@ from app.services.storage import ObjectStorage
 
 logger = logging.getLogger(__name__)
 
-# Keeps a burst of uploads from saturating the embedding server and CPU.
 _ingest_slots = asyncio.Semaphore(2)
 
 
@@ -29,7 +29,7 @@ async def ingest_document(
 ) -> None:
     async with _ingest_slots, SessionLocal() as session:
         document = await session.get(Document, document_id)
-        if document is None:  # deleted before processing started
+        if document is None:
             return
         try:
             pdf_bytes = await storage.get_bytes(document.storage_key)
@@ -78,5 +78,6 @@ async def fail_interrupted_ingestions() -> None:
             )
         )
         await session.commit()
-        if result.rowcount:  # type: ignore[attr-defined]
-            logger.warning("Marked %d interrupted documents as failed", result.rowcount)  # type: ignore[attr-defined]
+        updated = cast("CursorResult[Any]", result).rowcount
+        if updated:
+            logger.warning("Marked %d interrupted documents as failed", updated)

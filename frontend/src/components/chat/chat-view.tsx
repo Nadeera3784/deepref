@@ -25,9 +25,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { api, ApiError, apiFetch, json } from "@/lib/api";
 import { queries } from "@/lib/queries";
 import { readEventStream } from "@/lib/sse";
-import type { Conversation, ConversationDetail, Source } from "@/lib/types";
-
-type StreamState = { question: string; answer: string; sources: Source[] | null };
+import type { Conversation, ConversationDetail, Source, StreamState } from "@/types";
 
 export function ChatView({ conversationId }: { conversationId?: string }) {
   const router = useRouter();
@@ -39,8 +37,6 @@ export function ChatView({ conversationId }: { conversationId?: string }) {
   const documents = useQuery(queries.documents());
 
   const [newChatScope, setNewChatScope] = useState<string[]>([]);
-  // A new chat hands its first question over via pendingQuestions (see sendFromNewChat),
-  // so the optimistic stream state can be initialised before the first render.
   const [handoff] = useState(() =>
     conversationId ? pendingQuestions.get(conversationId) : undefined,
   );
@@ -51,7 +47,6 @@ export function ChatView({ conversationId }: { conversationId?: string }) {
   const abortRef = useRef<AbortController | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
 
-  /** Sends the question and consumes the SSE answer. Expects `stream` to be initialised. */
   const runStream = useCallback(
     async (id: string, question: string) => {
       const controller = new AbortController();
@@ -76,14 +71,12 @@ export function ChatView({ conversationId }: { conversationId?: string }) {
         }
       } catch (error) {
         if (controller.signal.aborted) {
-          // The server saves the partial answer when the client disconnects; give it a moment.
           await new Promise((resolve) => setTimeout(resolve, 500));
         } else {
           toast.error(error instanceof Error ? error.message : "Something went wrong");
         }
       } finally {
         abortRef.current = null;
-        // Replace the optimistic stream with the persisted messages (also refreshes the sidebar).
         await queryClient.invalidateQueries({ queryKey: ["conversations"] });
         setStream(null);
       }
@@ -96,7 +89,6 @@ export function ChatView({ conversationId }: { conversationId?: string }) {
     void runStream(id, question);
   }
 
-  // The ref guards against React Strict Mode running the effect twice in development.
   const startedRef = useRef(false);
   useEffect(() => {
     if (!conversationId || !handoff || startedRef.current) return;
@@ -148,7 +140,6 @@ export function ChatView({ conversationId }: { conversationId?: string }) {
     }
   }
 
-  // 422 means the id in the URL isn't a valid UUID: just as missing as a deleted chat.
   if (conversation.error instanceof ApiError && [404, 422].includes(conversation.error.status)) {
     return (
       <>

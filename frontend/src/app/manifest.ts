@@ -1,6 +1,5 @@
 import type { MetadataRoute } from "next";
 
-/** Web app manifest (served at /manifest.webmanifest). Icons live in /public. */
 export default function manifest(): MetadataRoute.Manifest {
   return {
     name: "DeepRef",

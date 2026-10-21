@@ -29,7 +29,7 @@ import {
 import { useCurrentUser } from "@/hooks/use-current-user";
 import { api } from "@/lib/api";
 import { formatDate, formatDateTime } from "@/lib/format";
-import type { AdminUser, Page } from "@/lib/types";
+import type { AdminUser, Page } from "@/types";
 
 const PAGE_SIZE = 20;
 

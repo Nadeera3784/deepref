@@ -26,7 +26,6 @@ dependencies = [
 dev = [
     "pytest>=8.3",
     "pytest-asyncio>=0.25",
-    # Exact pin: Ruff adds and changes rules between releases, which would break CI unannounced.
     "ruff==0.16.10",
     "mypy>=1.13",
     "types-boto3[s3]==1.43.109",
@@ -41,7 +40,10 @@ target-version = "py313"
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "B", "UP", "SIM", "ASYNC", "RUF"]
-ignore = ["B008"] # FastAPI's Depends()/File() in defaults is idiomatic
+ignore = ["B008"]
+
+[tool.ruff.lint.per-file-ignores]
+"alembic/env.py" = ["F401"]
 
 [tool.ruff.lint.isort]
 known-third-party = ["alembic"]

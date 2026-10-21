@@ -1,7 +1,4 @@
-/**
- * Browser-side API client. All calls go to this app's /api/* Route Handlers, which attach the
- * session token from the httpOnly cookie and forward to FastAPI.
- */
+import type { FastApiError } from "@/types";
 
 export class ApiError extends Error {
   constructor(
@@ -13,24 +10,20 @@ export class ApiError extends Error {
   }
 }
 
-type FastApiError = { detail?: string | { msg: string }[] };
-
 export async function errorMessage(response: Response): Promise<string> {
   try {
     const body = (await response.json()) as FastApiError;
     if (typeof body.detail === "string") return body.detail;
     if (Array.isArray(body.detail)) return body.detail.map((d) => d.msg).join(", ");
-  } catch {
-    // Non-JSON error body
-  }
+  } catch {}
   return response.statusText || `Request failed (${response.status})`;
 }
 
 function handleUnauthorized(status: number) {
   if (status === 401 && typeof window !== "undefined" && !location.pathname.startsWith("/login")) {
-    // Runs outside React (inside fetch helpers), so the router isn't available here.
-    // eslint-disable-next-line @next/next/no-location-assign-relative-destination
-    location.assign(`/login?next=${encodeURIComponent(location.pathname)}`);
+    location.assign(
+      new URL(`/login?next=${encodeURIComponent(location.pathname)}`, location.origin),
+    );
   }
 }
 

@@ -9,9 +9,8 @@ import type {
   Page,
   ServiceHealth,
   User,
-} from "@/lib/types";
+} from "@/types";
 
-/** Central query keys + fetchers so invalidation stays consistent across components. */
 export const queries = {
   me: () => queryOptions({ queryKey: ["me"], queryFn: () => api<User>("/users/me") }),
 
@@ -19,7 +18,6 @@ export const queries = {
     queryOptions({
       queryKey: ["documents"],
       queryFn: () => api<DocumentItem[]>("/documents"),
-      // Poll while any document is still being indexed.
       refetchInterval: (query) =>
         query.state.data?.some((d) => d.status === "processing") ? 2000 : false,
     }),

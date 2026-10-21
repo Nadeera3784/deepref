@@ -2,7 +2,6 @@ import Image from "next/image";
 
 import { cn } from "@/lib/utils";
 
-/** Brand mark: stacked pages (the knowledge base) with one highlighted, cited passage. */
 export function LogoMark({ className }: { className?: string }) {
   return (
     <Image

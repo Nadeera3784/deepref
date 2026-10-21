@@ -258,7 +258,6 @@ async def _generate(
             if not is_citation_only("".join(held)):
                 streaming = True
                 yield "".join(held).lstrip()
-        # Bill every attempt, so analytics reflect the real cost of the answer.
         usage.prompt_tokens = (usage.prompt_tokens or 0) + (attempt_usage.prompt_tokens or 0)
         usage.completion_tokens = (usage.completion_tokens or 0) + (
             attempt_usage.completion_tokens or 0
@@ -292,7 +291,6 @@ async def _stream_answer(
     saved = False
 
     async def save() -> None:
-        # The request-scoped session is closed once streaming starts, so use a fresh one.
         try:
             async with SessionLocal() as session:
                 session.add(
@@ -329,6 +327,5 @@ async def _stream_answer(
         logger.exception("LLM streaming failed")
         yield _sse("error", {"detail": "The language model is unavailable. Please try again."})
     finally:
-        # Client disconnected mid-answer: keep whatever was generated so history stays coherent.
         if not saved and parts:
             await asyncio.shield(save())
