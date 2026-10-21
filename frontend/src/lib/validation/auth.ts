@@ -1,10 +1,5 @@
 import { z } from "zod";
 
-/**
- * Auth form schemas, shared by the client forms (via React Hook Form) and the /api/auth Route
- * Handlers. Limits mirror the FastAPI schemas in backend/app/schemas/auth.py.
- */
-
 const email = z
   .string()
   .trim()
@@ -21,7 +16,8 @@ export const registerRequestSchema = z.object({
     .string()
     .trim()
     .max(255, "Name must be 255 characters or fewer")
-    .optional()
+    // The form sends null for a blank name; API clients may leave the field out entirely.
+    .nullish()
     .transform((name) => name || null),
   email,
   password: z.string().min(8, "Use at least 8 characters").max(128, "Use 128 characters or fewer"),

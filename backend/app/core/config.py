@@ -23,6 +23,10 @@ class Settings(BaseSettings):
     JWT_ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24
     ALLOW_REGISTRATION: bool = True
+    RATE_LIMIT_ENABLED: bool = True
+    RATE_LIMIT_STORAGE_URI: str = "async+memory://"
+    REGISTER_RATE_LIMIT_PER_IP: str = "3/minute;10/hour"
+    REGISTER_RATE_LIMIT_GLOBAL: str = "60/hour"
     CORS_ORIGINS: Annotated[list[AnyHttpUrl], BeforeValidator(_parse_csv)] = []
 
     FIRST_ADMIN_EMAIL: EmailStr

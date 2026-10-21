@@ -18,13 +18,15 @@ dependencies = [
     "httpx>=0.28",
     "pypdf>=5.1",
     "minio>=7.2.20",
+    "limits==5.8.0",
 ]
 
 [dependency-groups]
 dev = [
     "pytest>=8.3",
     "pytest-asyncio>=0.25",
-    "ruff>=0.8",
+    # Exact pin: Ruff adds and changes rules between releases, which would break CI unannounced.
+    "ruff==0.16.10",
     "mypy>=1.13",
 ]
 
@@ -41,6 +43,10 @@ ignore = ["B008"] # FastAPI's Depends()/File() in defaults is idiomatic
 
 [tool.ruff.lint.isort]
 known-third-party = ["alembic"]
+
+[tool.ruff.format]
+quote-style = "double"
+docstring-code-format = true
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"

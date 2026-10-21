@@ -1,17 +1,17 @@
 import { type NextRequest, NextResponse } from "next/server";
 
+import { forwardedFor } from "@/lib/client-ip";
 import { backendUrl } from "@/lib/server-config";
 import { clearSessionCookie, SESSION_COOKIE } from "@/lib/session";
 
-/**
- * Backend-for-frontend proxy: forwards /api/* to FastAPI with the bearer token taken from the
- * httpOnly session cookie, so the token is never exposed to browser JavaScript.
- * Bodies are streamed in both directions (PDF uploads, SSE chat responses).
- */
-
 const FORWARDED_REQUEST_HEADERS = ["accept", "content-type", "range"];
-// fetch() already decoded the body, and hop-by-hop headers must not be forwarded.
-const DROPPED_RESPONSE_HEADERS = ["content-encoding", "content-length", "transfer-encoding", "connection"];
+
+const DROPPED_RESPONSE_HEADERS = [
+  "content-encoding",
+  "content-length",
+  "transfer-encoding",
+  "connection",
+];
 
 async function proxy(request: NextRequest, { params }: RouteContext<"/api/[...path]">) {
   const { path } = await params;
@@ -23,20 +23,24 @@ async function proxy(request: NextRequest, { params }: RouteContext<"/api/[...pa
     if (value) headers.set(name, value);
   }
   if (token) headers.set("authorization", `Bearer ${token}`);
+  for (const [name, value] of Object.entries(forwardedFor(request))) headers.set(name, value);
 
   const hasBody = request.method !== "GET" && request.method !== "HEAD";
   let upstream: Response;
   try {
-    upstream = await fetch(`${backendUrl(`/${path.map(encodeURIComponent).join("/")}`)}${request.nextUrl.search}`, {
-      method: request.method,
-      headers,
-      body: hasBody ? request.body : undefined,
-      // Required by Node's fetch to stream a request body.
-      ...(hasBody ? { duplex: "half" } : {}),
-      signal: request.signal,
-      redirect: "manual",
-      cache: "no-store",
-    } as RequestInit);
+    upstream = await fetch(
+      `${backendUrl(`/${path.map(encodeURIComponent).join("/")}`)}${request.nextUrl.search}`,
+      {
+        method: request.method,
+        headers,
+        body: hasBody ? request.body : undefined,
+        // Required by Node's fetch to stream a request body.
+        ...(hasBody ? { duplex: "half" } : {}),
+        signal: request.signal,
+        redirect: "manual",
+        cache: "no-store",
+      } as RequestInit,
+    );
   } catch {
     return NextResponse.json({ detail: "The API server is unreachable" }, { status: 502 });
   }

@@ -6,12 +6,20 @@ from fastapi.security import OAuth2PasswordRequestForm
 
 from app.api.deps import SessionDep
 from app.core.config import settings
+from app.core.rate_limit import RateLimit
 from app.core.security import create_access_token, verify_password
 from app.schemas.auth import RegisterRequest, Token
 from app.schemas.user import UserRead
 from app.services import users as user_service
 
 router = APIRouter(prefix="/auth", tags=["auth"])
+
+register_rate_limit = RateLimit(
+    "register",
+    per_ip=settings.REGISTER_RATE_LIMIT_PER_IP,
+    global_limit=settings.REGISTER_RATE_LIMIT_GLOBAL,
+    message="Too many sign-up attempts.",
+)
 
 
 @router.post("/login")
@@ -31,7 +39,12 @@ async def login(
     return Token(access_token=token, expires_in=expires_in)
 
 
-@router.post("/register", status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/register",
+    status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(register_rate_limit)],
+    responses={429: {"description": "Too many sign-up attempts; see the Retry-After header"}},
+)
 async def register(session: SessionDep, body: RegisterRequest) -> UserRead:
     if not settings.ALLOW_REGISTRATION:
         raise HTTPException(status.HTTP_403_FORBIDDEN, "Self-registration is disabled")

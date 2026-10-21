@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 
+import { forwardedFor } from "@/lib/client-ip";
 import { backendUrl } from "@/lib/server-config";
 import { readTokenClaims, setSessionCookie } from "@/lib/session";
 import { loginSchema } from "@/lib/validation/auth";
@@ -14,7 +15,7 @@ export async function POST(request: Request) {
 
   const upstream = await fetch(backendUrl("/auth/login"), {
     method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    headers: { "Content-Type": "application/x-www-form-urlencoded", ...forwardedFor(request) },
     body: new URLSearchParams({ username: parsed.data.email, password: parsed.data.password }),
   });
   if (!upstream.ok) {
