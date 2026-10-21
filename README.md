@@ -125,38 +125,3 @@ them, and its default limit is 8 GB, which was the whole Docker VM. Every RAG pr
 so the cache only ever grew. Two settings fixed it: a 512 MB cap on that cache and a memory limit
 on the container. I now check how much memory a service is *allowed* to use, not just what it uses
 on day one. And when a container dies silently, `dmesg` is worth checking before the app logs.
-
-### Dependencies can disappear
-
-I added MinIO for file storage and discovered the official Docker image had been pulled from
-Docker Hub a few weeks earlier. Chainguard's build kept it running, but depending on a project that
-had stopped shipping releases felt like borrowed time, so I moved to RustFS. Because the backend
-talks plain S3 through boto3, the swap barely touched the app: new settings, a new container and
-a new setup script. Around the same time, the newest `@hookform/resolvers` had been out for a single
-day and wouldn't install, while the version from a few weeks before installed fine. I now pin
-exact versions and stay away from anything released in the last couple of weeks.
-
-### The framework had moved on from what I knew
-
-Next.js 16 renamed middleware to "proxy" and turns on Cache Components, which fails the build for
-things that used to be fine: a shadcn skeleton calling `Math.random()` during render, and a sidebar
-reading the URL without a `<Suspense>` boundary around it. The docs that ship inside
-`node_modules/next` were more accurate than my memory, so now I read those first.
-
-### Smaller things
-
-- In TanStack Query v5, a disabled query reports `isPending`, so my "new chat" page sat on a
-  loading skeleton forever. `isLoading` was what I actually wanted.
-- Keeping the login token in an httpOnly cookie and proxying `/api` through Next.js means browser
-  JavaScript never touches it. Streaming answers still work through that proxy, as long as the
-  response body is passed straight through.
-- Sharing one Zod schema between the React Hook Form forms and the server routes stops the client
-  and server rules from drifting apart.
-- A delete button with no loading state feels broken even when it works. Keeping the dialog open
-  with "Deleting…" until the server answers made it feel solid.
-- Deleting a document doesn't clean up everything that points at it: older chats can still hold
-  its ID. I haven't fixed that yet, but it taught me that every delete needs a list of what
-  references the thing being deleted.
-
-If I built this again, I'd write the evaluation questions on day one, before the prompt or the
-threshold, and I'd give every container a memory budget from the start.
