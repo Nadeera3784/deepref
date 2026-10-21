@@ -12,14 +12,14 @@ Everything runs locally: no external AI APIs.
 | `frontend`   | Next.js 16 (App Router, Cache Components), shadcn/ui, TanStack Query | JWT kept in an httpOnly cookie; never exposed to browser JS |
 | `backend`    | FastAPI, async SQLAlchemy 2, Alembic, Pydantic v2, uv | JWT auth, RBAC, PDF ingestion, RAG, SSE streaming |
 | `db`         | `pgvector/pgvector:pg17` | HNSW index, cosine distance |
-| `minio`      | `cgr.dev/chainguard/minio` (pinned digest) | Private bucket; `minio-init` creates it plus a bucket-scoped app user |
+| `rustfs`     | `rustfs/rustfs` (pinned digest) | S3-compatible storage; private bucket, which `rustfs-init` creates with a bucket-scoped app user |
 | `llm`        | `ghcr.io/ggml-org/llama.cpp:server` | OpenAI-compatible API, model downloaded from Hugging Face on first start |
 | `embeddings` | same image, `--embedding` mode | |
 
 ### How a question is answered
 
 1. **Upload**: the PDF is validated (extension, `%PDF-` magic bytes, size limit), streamed to
-   MinIO, and indexed in the background: text per page (pypdf) → overlapping chunks →
+   RustFS, and indexed in the background: text per page (pypdf) → overlapping chunks →
    embeddings → `document_chunks` table.
 2. **Ask**: the question is embedded, the closest chunks from *your* ready documents (optionally
    limited to documents you pick per chat) are retrieved with pgvector, and SmolLM2 gets them as
@@ -48,7 +48,7 @@ The first start downloads the models (~1.1 GB) into the `models` volume; follow 
 
 - App: <http://localhost:3000>
 - API docs (Swagger): <http://localhost:8000/api/v1/docs>
-- MinIO console: <http://localhost:9001> (sign in with `MINIO_ROOT_USER` / `MINIO_ROOT_PASSWORD`)
+- RustFS console: <http://localhost:9001> (sign in with `RUSTFS_ROOT_USER` / `RUSTFS_ROOT_PASSWORD`)
 
 ## Development
 
@@ -129,9 +129,10 @@ on day one. And when a container dies silently, `dmesg` is worth checking before
 ### Dependencies can disappear
 
 I added MinIO for file storage and discovered the official Docker image had been pulled from
-Docker Hub a few weeks earlier. I switched to Chainguard's build of it, pinned by digest, and
-because the backend only speaks plain S3, moving to something like SeaweedFS later is mostly a
-config change. Around the same time, the newest `@hookform/resolvers` had been out for a single
+Docker Hub a few weeks earlier. Chainguard's build kept it running, but depending on a project that
+had stopped shipping releases felt like borrowed time, so I moved to RustFS. Because the backend
+talks plain S3 through boto3, the swap barely touched the app: new settings, a new container and
+a new setup script. Around the same time, the newest `@hookform/resolvers` had been out for a single
 day and wouldn't install, while the version from a few weeks before installed fine. I now pin
 exact versions and stay away from anything released in the last couple of weeks.
 

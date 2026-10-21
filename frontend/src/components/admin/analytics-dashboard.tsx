@@ -56,7 +56,7 @@ function ServiceStatus() {
   const { data } = useQuery(queries.serviceHealth());
   const services = [
     { key: "database", label: "Database" },
-    { key: "storage", label: "Storage (MinIO)" },
+    { key: "storage", label: "Storage (RustFS)" },
     { key: "llm", label: "LLM (SmolLM2)" },
     { key: "embeddings", label: "Embeddings" },
   ] as const;

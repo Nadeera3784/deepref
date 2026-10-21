@@ -27,10 +27,13 @@ from app.schemas.common import Page
 from app.services.embeddings import EmbeddingError
 from app.services.llm import LLMClient, LLMError, Usage
 from app.services.rag import (
+    NO_ANSWER_FROM_PASSAGES,
     NO_ANSWER_MESSAGE,
     NO_ANSWER_MESSAGE_SCOPED,
     build_messages,
+    is_citation_only,
     retrieve,
+    with_retry_instruction,
 )
 
 logger = logging.getLogger(__name__)
@@ -188,13 +191,16 @@ async def send_message(
 
 
 def _informative(history: list[Message]) -> list[Message]:
-    """Drop unanswered turns (a question plus its fixed no-answer reply) from the history sent to
-    the model. They carry no information, and a small model copies the refusal into later answers.
+    """Drop unanswered turns from the history sent to the model: a question plus a fixed
+    no-answer reply, or a reply that is only a citation like "[1]". They carry no information,
+    and a small model copies them into every later answer in the chat.
     """
-    no_answer = {NO_ANSWER_MESSAGE, NO_ANSWER_MESSAGE_SCOPED}
+    no_answer = {NO_ANSWER_MESSAGE, NO_ANSWER_MESSAGE_SCOPED, NO_ANSWER_FROM_PASSAGES}
     kept: list[Message] = []
     for message in history:
-        if message.role == MessageRole.ASSISTANT and message.content in no_answer:
+        if message.role == MessageRole.ASSISTANT and (
+            message.content in no_answer or is_citation_only(message.content)
+        ):
             if kept and kept[-1].role == MessageRole.USER:
                 kept.pop()
             continue
@@ -230,6 +236,42 @@ async def _find_sources(
 
 async def _single(text: str) -> AsyncIterator[str]:
     yield text
+
+
+async def _generate(
+    llm: LLMClient, prompt: list[dict[str, str]], usage: Usage
+) -> AsyncIterator[str]:
+    """Stream the model's answer, but never one that is only citation markers like "[1]".
+
+    Tokens are held back until the answer contains real words, so a citation-only reply is never
+    shown. In that case the question is retried once with a nudge, then a fixed message is sent.
+    """
+    for attempt, messages in enumerate((prompt, with_retry_instruction(prompt))):
+        attempt_usage = Usage()
+        held: list[str] = []
+        streaming = False
+        async for delta in llm.stream_chat(messages, attempt_usage):
+            if streaming:
+                yield delta
+                continue
+            held.append(delta)
+            if not is_citation_only("".join(held)):
+                streaming = True
+                yield "".join(held).lstrip()
+        # Bill every attempt, so analytics reflect the real cost of the answer.
+        usage.prompt_tokens = (usage.prompt_tokens or 0) + (attempt_usage.prompt_tokens or 0)
+        usage.completion_tokens = (usage.completion_tokens or 0) + (
+            attempt_usage.completion_tokens or 0
+        )
+        if streaming:
+            return
+        logger.warning(
+            "Model replied with only %r (attempt %d)%s",
+            "".join(held).strip(),
+            attempt + 1,
+            "; retrying" if attempt == 0 else "",
+        )
+    yield NO_ANSWER_FROM_PASSAGES
 
 
 def _sse(event: str, data: Any) -> str:
@@ -276,7 +318,7 @@ async def _stream_answer(
 
     try:
         yield _sse("sources", [s.model_dump(mode="json") for s in sources])
-        deltas = _single(prompt) if isinstance(prompt, str) else llm.stream_chat(prompt, usage)
+        deltas = _single(prompt) if isinstance(prompt, str) else _generate(llm, prompt, usage)
         async for delta in deltas:
             parts.append(delta)
             yield _sse("token", {"content": delta})

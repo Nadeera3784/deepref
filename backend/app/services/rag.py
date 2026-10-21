@@ -1,5 +1,6 @@
 """Retrieval and prompt construction for document-grounded chat."""
 
+import re
 import uuid
 from collections.abc import Sequence
 
@@ -31,6 +32,35 @@ NO_ANSWER_MESSAGE_SCOPED = (
     "I couldn't find anything about that in the selected documents. Try rephrasing your "
     "question, or search all documents instead."
 )
+
+# Sent when the model, even after a retry, only produces citation markers like "[1]".
+NO_ANSWER_FROM_PASSAGES = (
+    "I found passages that look related but couldn't put an answer together from them. "
+    "Check the sources below, or try asking in a different way."
+)
+
+# A small model given a short "What is X?" question and one passage often replies with just
+# "[1]". Adding this to the question on a retry fixed that in testing (4/8 failures -> 0/8).
+RETRY_INSTRUCTION = "Answer in full sentences using the passages, then add the citation."
+
+_CITATION = re.compile(r"\[[\d.,\s]*\]")
+_MIN_ANSWER_WORD_CHARS = 2
+
+
+def is_citation_only(text: str) -> bool:
+    """True if `text` has no real words once citation markers like [1] or [1.4] are removed.
+
+    Deliberately loose: a terse but real answer such as "3 hours [1]" is still an answer.
+    """
+    words = _CITATION.sub("", text)
+    return sum(ch.isalnum() for ch in words) < _MIN_ANSWER_WORD_CHARS
+
+
+def with_retry_instruction(messages: list[dict[str, str]]) -> list[dict[str, str]]:
+    """Copy of the prompt with RETRY_INSTRUCTION appended to the final user question."""
+    *rest, question = messages
+    return [*rest, {**question, "content": f"{question['content']}\n\n{RETRY_INSTRUCTION}"}]
+
 
 # Keeps a long earlier answer from crowding retrieved context out of the model's window.
 MAX_HISTORY_CHARS = 1500

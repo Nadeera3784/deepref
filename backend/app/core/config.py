@@ -68,12 +68,12 @@ class Settings(BaseSettings):
     RETRIEVAL_MIN_SCORE: float = 0.62
     HISTORY_MESSAGES: int = 6
 
-    MINIO_ENDPOINT: str = "minio:9000"
-    MINIO_ACCESS_KEY: str
-    MINIO_SECRET_KEY: SecretStr
-    MINIO_BUCKET: str = "deepref"
-    MINIO_SECURE: bool = False
-    MINIO_REGION: str = "us-east-1"
+    # Object storage: RustFS in Docker Compose, but any S3-compatible service works.
+    S3_ENDPOINT_URL: str = "http://rustfs:9000"
+    S3_ACCESS_KEY: str
+    S3_SECRET_KEY: SecretStr
+    S3_BUCKET: str = "deepref"
+    S3_REGION: str = "us-east-1"
 
     # Uploads
     MAX_UPLOAD_MB: int = 25

@@ -28,7 +28,6 @@ class Document(UUIDPrimaryKeyMixin, TimestampMixin, Base):
         ForeignKey("users.id", ondelete="CASCADE"), index=True
     )
     filename: Mapped[str] = mapped_column(String(255))
-    # Object key in the MinIO bucket (see app.services.storage.document_key).
     storage_key: Mapped[str] = mapped_column(String(1024))
     size_bytes: Mapped[int] = mapped_column(BigInteger)
     page_count: Mapped[int] = mapped_column(Integer, default=0)
